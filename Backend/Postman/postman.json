@@ -1,0 +1,1310 @@
+{
+  "info": {
+    "_postman_id": "b7b1c9e0-0001-4a2a-9f0f-bloodbridge01",
+    "name": "BloodBridge Backend API",
+    "description": "Complete Postman collection for the BloodBridge backend (Express + MongoDB).\n\n## How to use\n1. Start the backend: `cd Backend && npm run dev` (default `http://localhost:5000`)\n2. Run the login request of your role first — the token is auto-saved into collection variables:\n   - `POST /api/auth/login` → saves `{{token}}` (User / Organization users)\n   - `POST /api/admin/auth/login` → saves `{{adminToken}}`\n   - `POST /api/superadmin/auth/login` → saves `{{superAdminToken}}`\n3. Replace sample ids (`{{hospitalId}}`, `{{campId}}`, ...) with real ids from your database.\n\nFolders follow the route files inside `Backend/routes/`.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5000" },
+    { "key": "token", "value": "" },
+    { "key": "adminToken", "value": "" },
+    { "key": "superAdminToken", "value": "" },
+    { "key": "organizationCode", "value": "HOSP-DEL-001" },
+    { "key": "hospitalId", "value": "REPLACE_WITH_HOSPITAL_ID" },
+    { "key": "bloodBankId", "value": "REPLACE_WITH_BLOODBANK_ID" },
+    { "key": "ngoId", "value": "REPLACE_WITH_NGO_ID" },
+    { "key": "requestId", "value": "REPLACE_WITH_REQUEST_ID" },
+    { "key": "driveId", "value": "REPLACE_WITH_DRIVE_ID" },
+    { "key": "campId", "value": "REPLACE_WITH_CAMP_ID" },
+    { "key": "slotId", "value": "REPLACE_WITH_SLOT_ID" },
+    { "key": "registrationId", "value": "REPLACE_WITH_REGISTRATION_ID" },
+    { "key": "userCode", "value": "USER-0001" }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+  },
+  "item": [
+    {
+      "name": "01 Health & Public",
+      "description": "Server health, root and public endpoints defined directly in `Backend/app.js`.",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/health", "host": ["{{baseUrl}}"], "path": ["health"] } },
+          "response": []
+        },
+        {
+          "name": "Root",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/", "host": ["{{baseUrl}}"], "path": [""] } },
+          "response": []
+        },
+        {
+          "name": "Public Camps",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/public/camps", "host": ["{{baseUrl}}"], "path": ["api", "public", "camps"] } },
+          "response": []
+        },
+        {
+          "name": "Public Camp Slots",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/public/camps/:campId/slots", "host": ["{{baseUrl}}"], "path": ["api", "public", "camps", ":campId", "slots"], "variable": [{ "key": "campId", "value": "{{campId}}" }] }
+          },
+          "response": []
+        },
+        {
+          "name": "[Test] Create Sample Camps",
+          "request": { "method": "POST", "header": [], "url": { "raw": "{{baseUrl}}/api/test/create-sample-camps", "host": ["{{baseUrl}}"], "path": ["api", "test", "create-sample-camps"] } },
+          "response": []
+        },
+        {
+          "name": "[Test] Create Sample Slots",
+          "request": { "method": "POST", "header": [], "url": { "raw": "{{baseUrl}}/api/test/create-sample-slots", "host": ["{{baseUrl}}"], "path": ["api", "test", "create-sample-slots"] } },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "02 Auth (User & Org Login)",
+      "description": "`routes/auth/AuthRoutes.js` → `/api/auth`. Login auto-saves `{{token}}`.",
+      "item": [
+        {
+          "name": "Register User",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Aarav Sharma\",\n  \"email\": \"aarav.sharma@bloodbridge.test\",\n  \"password\": \"Aarav@2026\",\n  \"role\": \"User\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{baseUrl}}/api/auth/register", "host": ["{{baseUrl}}"], "path": ["api", "auth", "register"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Login (User or Organization User)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "try {",
+                  "  const json = pm.response.json();",
+                  "  if (json.token) pm.collectionVariables.set('token', json.token);",
+                  "  console.log('token saved to {{token}}');",
+                  "} catch (e) { console.error(e); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"organizationCode\": \"{{organizationCode}}\",\n  \"email\": \"doctor@hospital.com\",\n  \"password\": \"password123\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "auth", "login"] },
+            "description": "Organization user: send `organizationCode` + email + password.\nRegular user: send only email + password."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "03 Organization Registration",
+      "description": "`routes/organization/OrganizationRegistrationRoutes.js` → `/api/auth/org`.",
+      "item": [
+        {
+          "name": "Register Organization (public)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"organizationName\": \"City Care Hospital\",\n  \"type\": \"hospital\",\n  \"email\": \"admin@citycare.test\",\n  \"phone\": \"9876543210\",\n  \"location\": {\n    \"city\": \"New Delhi\",\n    \"state\": \"Delhi\",\n    \"pincode\": \"110001\",\n    \"address\": \"12 MG Road\"\n  },\n  \"licenseNumber\": \"LIC-HOSP-0001\",\n  \"contactPerson\": \"Dr. Sharma\",\n  \"adminName\": \"Dr. Sharma\",\n  \"adminEmail\": \"admin@citycare.test\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{baseUrl}}/api/auth/org/register", "host": ["{{baseUrl}}"], "path": ["api", "auth", "org", "register"] },
+            "description": "type must be: hospital | bloodbank | ngo. Returns auto-generated `organizationCode` + `registrationCode`, status PENDING."
+          },
+          "response": []
+        },
+        {
+          "name": "Check Registration Status",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/auth/org/status/:organizationCode", "host": ["{{baseUrl}}"], "path": ["api", "auth", "org", "status", ":organizationCode"], "variable": [{ "key": "organizationCode", "value": "{{organizationCode}}" }] } },
+          "response": []
+        },
+        {
+          "name": "Get All Organizations (SuperAdmin)",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{superAdminToken}}", "type": "string" }] },
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/auth/org/all", "host": ["{{baseUrl}}"], "path": ["api", "auth", "org", "all"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Pending Organizations (SuperAdmin)",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{superAdminToken}}", "type": "string" }] },
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/auth/org/pending", "host": ["{{baseUrl}}"], "path": ["api", "auth", "org", "pending"] }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "04 SuperAdmin Auth",
+      "description": "`routes/admin/SuperAdminAuthRoutes.js`. Login auto-saves `{{superAdminToken}}`.",
+      "item": [
+        {
+          "name": "SuperAdmin Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "try {",
+                  "  const json = pm.response.json();",
+                  "  if (json.data && json.data.token) pm.collectionVariables.set('superAdminToken', json.data.token);",
+                  "  console.log('superAdminToken saved');",
+                  "} catch (e) { console.error(e); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"superadmin@bloodbridge.test\",\n  \"password\": \"Super@2026\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{baseUrl}}/api/superadmin/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "superadmin", "auth", "login"] }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "05 Admin Auth",
+      "description": "`routes/admin/AdminAuthRoutes.js`. Login auto-saves `{{adminToken}}`.",
+      "item": [
+        {
+          "name": "Admin Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "try {",
+                  "  const json = pm.response.json();",
+                  "  if (json.data && json.data.token) pm.collectionVariables.set('adminToken', json.data.token);",
+                  "  console.log('adminToken saved');",
+                  "} catch (e) { console.error(e); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"admin@bloodbridge.test\",\n  \"password\": \"Admin@2026\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{baseUrl}}/api/admin/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "admin", "auth", "login"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Register New Admin",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"new.admin@bloodbridge.test\",\n  \"password\": \"Admin@2026\",\n  \"name\": \"New Admin\",\n  \"adminCode\": \"ADM-002\",\n  \"permissions\": [\"hospitals\", \"bloodbanks\"]\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{baseUrl}}/api/admin/auth/register", "host": ["{{baseUrl}}"], "path": ["api", "admin", "auth", "register"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Admin Profile (me)",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] },
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/admin/auth/me", "host": ["{{baseUrl}}"], "path": ["api", "admin", "auth", "me"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Admin Logout",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] },
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/admin/auth/logout", "host": ["{{baseUrl}}"], "path": ["api", "admin", "auth", "logout"] }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "06 Admin - Approvals",
+      "description": "`routes/admin/ApprovalRoutes.js` → `/api/admin/approvals`. Requires SuperAdmin (`{{superAdminToken}}`).",
+      "item": [
+        {
+          "name": "Get All Pending Approvals",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{superAdminToken}}", "type": "string" }] }, "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/admin/approvals/pending/all?page=1&limit=10", "host": ["{{baseUrl}}"], "path": ["api", "admin", "approvals", "pending", "all"], "query": [{ "key": "page", "value": "1" }, { "key": "limit", "value": "10" }] } },
+          "response": []
+        },
+        {
+          "name": "Get Pending Approvals",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{superAdminToken}}", "type": "string" }] }, "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/admin/approvals/pending", "host": ["{{baseUrl}}"], "path": ["api", "admin", "approvals", "pending"] } },
+          "response": []
+        },
+        {
+          "name": "Get Pending Hospitals",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{superAdminToken}}", "type": "string" }] }, "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/admin/approvals/pending/hospitals", "host": ["{{baseUrl}}"], "path": ["api", "admin", "approvals", "pending", "hospitals"] } },
+          "response": []
+        },
+        {
+          "name": "Get Pending Blood Banks",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{superAdminToken}}", "type": "string" }] }, "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/admin/approvals/pending/bloodbanks", "host": ["{{baseUrl}}"], "path": ["api", "admin", "approvals", "pending", "bloodbanks"] } },
+          "response": []
+        },
+        {
+          "name": "Get Pending NGOs",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{superAdminToken}}", "type": "string" }] }, "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/admin/approvals/pending/ngos", "host": ["{{baseUrl}}"], "path": ["api", "admin", "approvals", "pending", "ngos"] } },
+          "response": []
+        },
+        {
+          "name": "Get Approval Stats",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{superAdminToken}}", "type": "string" }] }, "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/admin/approvals/stats", "host": ["{{baseUrl}}"], "path": ["api", "admin", "approvals", "stats"] } },
+          "response": []
+        },
+        {
+          "name": "Get Organization Details",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{superAdminToken}}", "type": "string" }] }, "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/admin/approvals/:id", "host": ["{{baseUrl}}"], "path": ["api", "admin", "approvals", ":id"], "variable": [{ "key": "id", "value": "{{hospitalId}}" }] } },
+          "response": []
+        },
+        {
+          "name": "Approve Organization",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{superAdminToken}}", "type": "string" }] },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"organizationCode\": \"{{organizationCode}}\",\n  \"approvalRemarks\": \"License verified\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{baseUrl}}/api/admin/approvals/approve", "host": ["{{baseUrl}}"], "path": ["api", "admin", "approvals", "approve"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Reject Organization",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{superAdminToken}}", "type": "string" }] },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"organizationCode\": \"{{organizationCode}}\",\n  \"rejectionReason\": \"Invalid license\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{baseUrl}}/api/admin/approvals/reject", "host": ["{{baseUrl}}"], "path": ["api", "admin", "approvals", "reject"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Suspend Organization",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{superAdminToken}}", "type": "string" }] },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"organizationCode\": \"{{organizationCode}}\",\n  \"suspensionReason\": \"Policy violation\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{baseUrl}}/api/admin/approvals/suspend", "host": ["{{baseUrl}}"], "path": ["api", "admin", "approvals", "suspend"] }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "07 Admin - Hospitals",
+      "description": "`routes/admin/HospitalRoutes.js` → `/api/admin/hospitals`. Requires `{{adminToken}}`.",
+      "item": [
+        {
+          "name": "Get All Hospitals",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] }, "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/admin/hospitals?status=APPROVED&city=Delhi&page=1&limit=20", "host": ["{{baseUrl}}"], "path": ["api", "admin", "hospitals"], "query": [{ "key": "status", "value": "APPROVED" }, { "key": "city", "value": "Delhi" }, { "key": "page", "value": "1" }, { "key": "limit", "value": "20" }] } },
+          "response": []
+        },
+        {
+          "name": "Get Hospital By Id",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] }, "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/admin/hospitals/id/:hospitalId", "host": ["{{baseUrl}}"], "path": ["api", "admin", "hospitals", "id", ":hospitalId"], "variable": [{ "key": "hospitalId", "value": "{{hospitalId}}" }] } },
+          "response": []
+        },
+        {
+          "name": "Get Hospital By Code",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] }, "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/admin/hospitals/code/:organizationCode", "host": ["{{baseUrl}}"], "path": ["api", "admin", "hospitals", "code", ":organizationCode"], "variable": [{ "key": "organizationCode", "value": "{{organizationCode}}" }] } },
+          "response": []
+        },
+        {
+          "name": "Get Hospitals By Status",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] }, "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/admin/hospitals/status/:status", "host": ["{{baseUrl}}"], "path": ["api", "admin", "hospitals", "status", ":status"], "variable": [{ "key": "status", "value": "APPROVED" }] } },
+          "response": []
+        },
+        {
+          "name": "Activate Hospital",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] }, "method": "POST", "header": [], "url": { "raw": "{{baseUrl}}/api/admin/hospitals/:id/activate", "host": ["{{baseUrl}}"], "path": ["api", "admin", "hospitals", ":id", "activate"], "variable": [{ "key": "id", "value": "{{hospitalId}}" }] } },
+          "response": []
+        },
+        {
+          "name": "Suspend Hospital",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] }, "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"reason\": \"Repeated complaints\"\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/api/admin/hospitals/:id/suspend", "host": ["{{baseUrl}}"], "path": ["api", "admin", "hospitals", ":id", "suspend"], "variable": [{ "key": "id", "value": "{{hospitalId}}" }] } },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "08 Admin - Blood Banks",
+      "description": "`routes/admin/BloodBankRoutes.js` → `/api/admin/bloodbanks`.",
+      "item": [
+        {
+          "name": "Register Blood Bank",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"name\": \"City Blood Bank\",\n  \"email\": \"bb@citycare.test\",\n  \"phone\": \"9876543210\",\n  \"city\": \"New Delhi\",\n  \"state\": \"Delhi\",\n  \"licenseNumber\": \"LIC-BB-0001\"\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/api/admin/bloodbanks/register", "host": ["{{baseUrl}}"], "path": ["api", "admin", "bloodbanks", "register"] } },
+          "response": []
+        },
+        {
+          "name": "Get All Blood Banks",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/admin/bloodbanks/all?status=&city=&page=1&limit=20", "host": ["{{baseUrl}}"], "path": ["api", "admin", "bloodbanks", "all"], "query": [{ "key": "status", "value": "" }, { "key": "city", "value": "" }, { "key": "page", "value": "1" }, { "key": "limit", "value": "20" }] } },
+          "response": []
+        },
+        {
+          "name": "Get Blood Bank By Id",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/admin/bloodbanks/id/:id", "host": ["{{baseUrl}}"], "path": ["api", "admin", "bloodbanks", "id", ":id"], "variable": [{ "key": "id", "value": "{{bloodBankId}}" }] } },
+          "response": []
+        },
+        {
+          "name": "Get Blood Bank By Code",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/admin/bloodbanks/code/:organizationCode", "host": ["{{baseUrl}}"], "path": ["api", "admin", "bloodbanks", "code", ":organizationCode"], "variable": [{ "key": "organizationCode", "value": "{{organizationCode}}" }] } },
+          "response": []
+        },
+        {
+          "name": "Get Blood Banks By Status",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/admin/bloodbanks/status/:status", "host": ["{{baseUrl}}"], "path": ["api", "admin", "bloodbanks", "status", ":status"], "variable": [{ "key": "status", "value": "VERIFIED" }] } },
+          "response": []
+        },
+        {
+          "name": "Get Blood Stock Of Blood Bank",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/admin/bloodbanks/:id/stock", "host": ["{{baseUrl}}"], "path": ["api", "admin", "bloodbanks", ":id", "stock"], "variable": [{ "key": "id", "value": "{{bloodBankId}}" }] } },
+          "response": []
+        },
+        {
+          "name": "Get Location Stats",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/admin/bloodbanks/stats/location", "host": ["{{baseUrl}}"], "path": ["api", "admin", "bloodbanks", "stats", "location"] } },
+          "response": []
+        },
+        {
+          "name": "Update Blood Bank",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] }, "method": "PUT", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"phone\": \"9876500000\"\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/api/admin/bloodbanks/:id", "host": ["{{baseUrl}}"], "path": ["api", "admin", "bloodbanks", ":id"], "variable": [{ "key": "id", "value": "{{bloodBankId}}" }] } },
+          "response": []
+        },
+        {
+          "name": "Update Blood Stock",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] }, "method": "PUT", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"bloodGroup\": \"O+\",\n  \"units\": 5\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/api/admin/bloodbanks/:id/stock", "host": ["{{baseUrl}}"], "path": ["api", "admin", "bloodbanks", ":id", "stock"], "variable": [{ "key": "id", "value": "{{bloodBankId}}" }] } },
+          "response": []
+        },
+        {
+          "name": "Verify Blood Bank",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] }, "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"bloodBankId\": \"{{bloodBankId}}\",\n  \"remarks\": \"License verified\"\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/api/admin/bloodbanks/verify", "host": ["{{baseUrl}}"], "path": ["api", "admin", "bloodbanks", "verify"] } },
+          "response": []
+        },
+        {
+          "name": "Reject Blood Bank",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] }, "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"bloodBankId\": \"{{bloodBankId}}\",\n  \"rejectionReason\": \"Invalid license\"\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/api/admin/bloodbanks/reject", "host": ["{{baseUrl}}"], "path": ["api", "admin", "bloodbanks", "reject"] } },
+          "response": []
+        },
+        {
+          "name": "Suspend Blood Bank",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] }, "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"bloodBankId\": \"{{bloodBankId}}\",\n  \"suspensionReason\": \"Policy violation\"\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/api/admin/bloodbanks/suspend", "host": ["{{baseUrl}}"], "path": ["api", "admin", "bloodbanks", "suspend"] } },
+          "response": []
+        },
+        {
+          "name": "Reactivate Blood Bank",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] }, "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"bloodBankId\": \"{{bloodBankId}}\",\n  \"remarks\": \"Issue resolved\"\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/api/admin/bloodbanks/reactivate", "host": ["{{baseUrl}}"], "path": ["api", "admin", "bloodbanks", "reactivate"] } },
+          "response": []
+        },
+        {
+          "name": "Delete Blood Bank",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] }, "method": "DELETE", "header": [], "url": { "raw": "{{baseUrl}}/api/admin/bloodbanks/:id", "host": ["{{baseUrl}}"], "path": ["api", "admin", "bloodbanks", ":id"], "variable": [{ "key": "id", "value": "{{bloodBankId}}" }] } },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "09 Admin - NGOs",
+      "description": "`routes/admin/NgoRoutes.js` → `/api/admin/ngos`. Requires `{{adminToken}}`.",
+      "item": [
+        {
+          "name": "Get All NGOs",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] }, "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/admin/ngos?status=APPROVED&page=1&limit=20", "host": ["{{baseUrl}}"], "path": ["api", "admin", "ngos"], "query": [{ "key": "status", "value": "APPROVED" }, { "key": "page", "value": "1" }, { "key": "limit", "value": "20" }] } },
+          "response": []
+        },
+        {
+          "name": "Get NGO By Id",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] }, "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/admin/ngos/id/:ngoId", "host": ["{{baseUrl}}"], "path": ["api", "admin", "ngos", "id", ":ngoId"], "variable": [{ "key": "ngoId", "value": "{{ngoId}}" }] } },
+          "response": []
+        },
+        {
+          "name": "Get NGO By Code",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] }, "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/admin/ngos/code/:organizationCode", "host": ["{{baseUrl}}"], "path": ["api", "admin", "ngos", "code", ":organizationCode"], "variable": [{ "key": "organizationCode", "value": "{{organizationCode}}" }] } },
+          "response": []
+        },
+        {
+          "name": "Get NGOs By Status",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] }, "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/admin/ngos/status/:status", "host": ["{{baseUrl}}"], "path": ["api", "admin", "ngos", "status", ":status"], "variable": [{ "key": "status", "value": "APPROVED" }] } },
+          "response": []
+        },
+        {
+          "name": "Get NGO Donor Coverage",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] }, "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/admin/ngos/:ngoId/donor-coverage", "host": ["{{baseUrl}}"], "path": ["api", "admin", "ngos", ":ngoId", "donor-coverage"], "variable": [{ "key": "ngoId", "value": "{{ngoId}}" }] } },
+          "response": []
+        },
+        {
+          "name": "Enable NGO Participation",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] }, "method": "POST", "header": [], "url": { "raw": "{{baseUrl}}/api/admin/ngos/:id/enable", "host": ["{{baseUrl}}"], "path": ["api", "admin", "ngos", ":id", "enable"], "variable": [{ "key": "id", "value": "{{ngoId}}" }] } },
+          "response": []
+        },
+        {
+          "name": "Disable NGO Participation",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] }, "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"reason\": \"Inactive NGO\"\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/api/admin/ngos/:id/disable", "host": ["{{baseUrl}}"], "path": ["api", "admin", "ngos", ":id", "disable"], "variable": [{ "key": "id", "value": "{{ngoId}}" }] } },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "10 Admin - Blood Stock",
+      "description": "`routes/admin/BloodStockRoutes.js` → `/api/admin/blood-stock`.",
+      "item": [
+        {
+          "name": "Initialize Blood Stock",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] }, "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"bloodBankId\": \"{{bloodBankId}}\"\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/api/admin/blood-stock/initialize", "host": ["{{baseUrl}}"], "path": ["api", "admin", "blood-stock", "initialize"] } },
+          "response": []
+        },
+        {
+          "name": "Update Stock",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] }, "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"bloodGroup\": \"O+\",\n  \"units\": 3,\n  \"action\": \"ADD\"\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/api/admin/blood-stock/update/:bloodBankId", "host": ["{{baseUrl}}"], "path": ["api", "admin", "blood-stock", "update", ":bloodBankId"], "variable": [{ "key": "bloodBankId", "value": "{{bloodBankId}}" }] }, "description": "action: ADD | REMOVE" },
+          "response": []
+        },
+        {
+          "name": "Get All Blood Stocks",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] }, "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/admin/blood-stock?page=1&limit=20", "host": ["{{baseUrl}}"], "path": ["api", "admin", "blood-stock"], "query": [{ "key": "page", "value": "1" }, { "key": "limit", "value": "20" }] } },
+          "response": []
+        },
+        {
+          "name": "Get Stock Summary",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] }, "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/admin/blood-stock/summary", "host": ["{{baseUrl}}"], "path": ["api", "admin", "blood-stock", "summary"] } },
+          "response": []
+        },
+        {
+          "name": "Get Stock By Blood Group",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] }, "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/admin/blood-stock/by-blood-group/:bloodGroup", "host": ["{{baseUrl}}"], "path": ["api", "admin", "blood-stock", "by-blood-group", ":bloodGroup"], "variable": [{ "key": "bloodGroup", "value": "O+" }] } },
+          "response": []
+        },
+        {
+          "name": "Get Stock By Blood Bank",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] }, "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/admin/blood-stock/by-bloodbank/:bloodBankId", "host": ["{{baseUrl}}"], "path": ["api", "admin", "blood-stock", "by-bloodbank", ":bloodBankId"], "variable": [{ "key": "bloodBankId", "value": "{{bloodBankId}}" }] } },
+          "response": []
+        },
+        {
+          "name": "Get Shortage Alerts",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] }, "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/admin/blood-stock/shortages", "host": ["{{baseUrl}}"], "path": ["api", "admin", "blood-stock", "shortages"] } },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "11 Admin - Alerts",
+      "description": "`routes/admin/AlertRoutes.js` → `/api/admin/alerts`.",
+      "item": [
+        {
+          "name": "Create Alert",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] }, "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"type\": \"DELAYED_EMERGENCY\",\n  \"title\": \"Emergency request delayed\",\n  \"message\": \"No blood bank responded in 10 minutes\",\n  \"severity\": \"CRITICAL\",\n  \"relatedEntity\": \"{{requestId}}\",\n  \"relatedEntityType\": \"REQUEST\",\n  \"createdBy\": \"system\"\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/api/admin/alerts", "host": ["{{baseUrl}}"], "path": ["api", "admin", "alerts"] } },
+          "response": []
+        },
+        {
+          "name": "Get All Alerts",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] }, "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/admin/alerts?page=1&limit=20&unreadOnly=false", "host": ["{{baseUrl}}"], "path": ["api", "admin", "alerts"], "query": [{ "key": "page", "value": "1" }, { "key": "limit", "value": "20" }, { "key": "unreadOnly", "value": "false" }] } },
+          "response": []
+        },
+        {
+          "name": "Get Alerts Summary",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] }, "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/admin/alerts/summary", "host": ["{{baseUrl}}"], "path": ["api", "admin", "alerts", "summary"] } },
+          "response": []
+        },
+        {
+          "name": "Get Unread Count",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] }, "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/admin/alerts/unread/count", "host": ["{{baseUrl}}"], "path": ["api", "admin", "alerts", "unread", "count"] } },
+          "response": []
+        },
+        {
+          "name": "Get Alerts By Type",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] }, "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/admin/alerts/by-type/:type", "host": ["{{baseUrl}}"], "path": ["api", "admin", "alerts", "by-type", ":type"], "variable": [{ "key": "type", "value": "DELAYED_EMERGENCY" }] } },
+          "response": []
+        },
+        {
+          "name": "Get Alert By Id",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] }, "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/admin/alerts/:alertId", "host": ["{{baseUrl}}"], "path": ["api", "admin", "alerts", ":alertId"], "variable": [{ "key": "alertId", "value": "REPLACE_WITH_ALERT_ID" }] } },
+          "response": []
+        },
+        {
+          "name": "Mark Alert As Read",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] }, "method": "POST", "header": [], "url": { "raw": "{{baseUrl}}/api/admin/alerts/:alertId/mark-read", "host": ["{{baseUrl}}"], "path": ["api", "admin", "alerts", ":alertId", "mark-read"], "variable": [{ "key": "alertId", "value": "REPLACE_WITH_ALERT_ID" }] } },
+          "response": []
+        },
+        {
+          "name": "Mark Multiple Alerts As Read",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] }, "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"alertIds\": [\"id1\", \"id2\"]\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/api/admin/alerts/mark-multiple-read", "host": ["{{baseUrl}}"], "path": ["api", "admin", "alerts", "mark-multiple-read"] } },
+          "response": []
+        },
+        {
+          "name": "Archive Alert",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] }, "method": "POST", "header": [], "url": { "raw": "{{baseUrl}}/api/admin/alerts/:alertId/archive", "host": ["{{baseUrl}}"], "path": ["api", "admin", "alerts", ":alertId", "archive"], "variable": [{ "key": "alertId", "value": "REPLACE_WITH_ALERT_ID" }] } },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "12 Admin - Audit Logs",
+      "description": "`routes/admin/AuditRoutes.js` → `/api/admin/logs`. Requires `{{adminToken}}`.",
+      "item": [
+        {
+          "name": "Get Audit Logs",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] }, "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/admin/logs?page=1&limit=50", "host": ["{{baseUrl}}"], "path": ["api", "admin", "logs"], "query": [{ "key": "page", "value": "1" }, { "key": "limit", "value": "50" }] } },
+          "response": []
+        },
+        {
+          "name": "Get Audit Stats",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] }, "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/admin/logs/stats", "host": ["{{baseUrl}}"], "path": ["api", "admin", "logs", "stats"] } },
+          "response": []
+        },
+        {
+          "name": "Get Recent Activity",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] }, "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/admin/logs/recent?limit=20", "host": ["{{baseUrl}}"], "path": ["api", "admin", "logs", "recent"], "query": [{ "key": "limit", "value": "20" }] } },
+          "response": []
+        },
+        {
+          "name": "Get Logs By Entity Type",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] }, "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/admin/logs/by-entity-type/:entityType", "host": ["{{baseUrl}}"], "path": ["api", "admin", "logs", "by-entity-type", ":entityType"], "variable": [{ "key": "entityType", "value": "ORGANIZATION" }] } },
+          "response": []
+        },
+        {
+          "name": "Get Logs By Action",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] }, "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/admin/logs/by-action/:action", "host": ["{{baseUrl}}"], "path": ["api", "admin", "logs", "by-action", ":action"], "variable": [{ "key": "action", "value": "APPROVED" }] } },
+          "response": []
+        },
+        {
+          "name": "Get Logs By Entity Code",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] }, "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/admin/logs/by-entity-code/:entityCode", "host": ["{{baseUrl}}"], "path": ["api", "admin", "logs", "by-entity-code", ":entityCode"], "variable": [{ "key": "entityCode", "value": "{{organizationCode}}" }] } },
+          "response": []
+        },
+        {
+          "name": "Get Log By Id",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] }, "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/admin/logs/:logId", "host": ["{{baseUrl}}"], "path": ["api", "admin", "logs", ":logId"], "variable": [{ "key": "logId", "value": "REPLACE_WITH_LOG_ID" }] } },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "13 Admin - Dashboard",
+      "description": "`routes/admin/DashboardRoutes.js` → `/api/admin/dashboard`. Requires `{{superAdminToken}}`.",
+      "item": [
+        {
+          "name": "Dashboard Overview",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{superAdminToken}}", "type": "string" }] }, "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/admin/dashboard/overview", "host": ["{{baseUrl}}"], "path": ["api", "admin", "dashboard", "overview"] } },
+          "response": []
+        },
+        {
+          "name": "Organization Stats",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{superAdminToken}}", "type": "string" }] }, "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/admin/dashboard/organizations", "host": ["{{baseUrl}}"], "path": ["api", "admin", "dashboard", "organizations"] } },
+          "response": []
+        },
+        {
+          "name": "Blood Stock Stats",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{superAdminToken}}", "type": "string" }] }, "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/admin/dashboard/blood-stock", "host": ["{{baseUrl}}"], "path": ["api", "admin", "dashboard", "blood-stock"] } },
+          "response": []
+        },
+        {
+          "name": "Alert Stats",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{superAdminToken}}", "type": "string" }] }, "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/admin/dashboard/alerts", "host": ["{{baseUrl}}"], "path": ["api", "admin", "dashboard", "alerts"] } },
+          "response": []
+        },
+        {
+          "name": "User Stats",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{superAdminToken}}", "type": "string" }] }, "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/admin/dashboard/users", "host": ["{{baseUrl}}"], "path": ["api", "admin", "dashboard", "users"] } },
+          "response": []
+        },
+        {
+          "name": "Recent Activity",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{superAdminToken}}", "type": "string" }] }, "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/admin/dashboard/activity", "host": ["{{baseUrl}}"], "path": ["api", "admin", "dashboard", "activity"] } },
+          "response": []
+        },
+        {
+          "name": "System Health",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{superAdminToken}}", "type": "string" }] }, "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/admin/dashboard/health", "host": ["{{baseUrl}}"], "path": ["api", "admin", "dashboard", "health"] } },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "14 Admin - NGO Drives (BloodBank ↔ NGO)",
+      "description": "`routes/admin/BloodBankNgoDriveRoutes.js` → `/api/admin/drives`.",
+      "item": [
+        {
+          "name": "Create Drive",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"bloodBankId\": \"{{bloodBankId}}\",\n  \"ngoId\": \"{{ngoId}}\",\n  \"driveTitle\": \"Weekend Blood Drive\",\n  \"location\": \"Community Center, Delhi\",\n  \"driveDate\": \"2026-10-15\",\n  \"expectedUnits\": 40,\n  \"expectedDonors\": 50\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/api/admin/drives/create", "host": ["{{baseUrl}}"], "path": ["api", "admin", "drives", "create"] } },
+          "response": []
+        },
+        {
+          "name": "Get All Drives",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/admin/drives/all?status=PLANNED&page=1&limit=20", "host": ["{{baseUrl}}"], "path": ["api", "admin", "drives", "all"], "query": [{ "key": "status", "value": "PLANNED" }, { "key": "page", "value": "1" }, { "key": "limit", "value": "20" }] } },
+          "response": []
+        },
+        {
+          "name": "Get Drive By Id",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/admin/drives/id/:id", "host": ["{{baseUrl}}"], "path": ["api", "admin", "drives", "id", ":id"], "variable": [{ "key": "id", "value": "{{driveId}}" }] } },
+          "response": []
+        },
+        {
+          "name": "Get Drive With Details",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/admin/drives/details/:id", "host": ["{{baseUrl}}"], "path": ["api", "admin", "drives", "details", ":id"], "variable": [{ "key": "id", "value": "{{driveId}}" }] } },
+          "response": []
+        },
+        {
+          "name": "Get Drives By Blood Bank",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/admin/drives/bloodbank/:bloodBankId", "host": ["{{baseUrl}}"], "path": ["api", "admin", "drives", "bloodbank", ":bloodBankId"], "variable": [{ "key": "bloodBankId", "value": "{{bloodBankId}}" }] } },
+          "response": []
+        },
+        {
+          "name": "Get Drives By NGO",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/admin/drives/ngo/:ngoId", "host": ["{{baseUrl}}"], "path": ["api", "admin", "drives", "ngo", ":ngoId"], "variable": [{ "key": "ngoId", "value": "{{ngoId}}" }] } },
+          "response": []
+        },
+        {
+          "name": "Get Drive Statistics",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/admin/drives/stats", "host": ["{{baseUrl}}"], "path": ["api", "admin", "drives", "stats"] } },
+          "response": []
+        },
+        {
+          "name": "Update Drive",
+          "request": { "method": "PUT", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"driveTitle\": \"Updated Drive Title\"\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/api/admin/drives/:id", "host": ["{{baseUrl}}"], "path": ["api", "admin", "drives", ":id"], "variable": [{ "key": "id", "value": "{{driveId}}" }] } },
+          "response": []
+        },
+        {
+          "name": "Start Drive",
+          "request": { "method": "POST", "header": [], "url": { "raw": "{{baseUrl}}/api/admin/drives/:id/start", "host": ["{{baseUrl}}"], "path": ["api", "admin", "drives", ":id", "start"], "variable": [{ "key": "id", "value": "{{driveId}}" }] } },
+          "response": []
+        },
+        {
+          "name": "Record Collection",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"bloodGroup\": \"O+\",\n  \"units\": 4\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/api/admin/drives/:id/collect", "host": ["{{baseUrl}}"], "path": ["api", "admin", "drives", ":id", "collect"], "variable": [{ "key": "id", "value": "{{driveId}}" }] } },
+          "response": []
+        },
+        {
+          "name": "Complete Drive",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"totalDonorsParticipated\": 45,\n  \"notes\": \"Drive completed successfully\"\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/api/admin/drives/:id/complete", "host": ["{{baseUrl}}"], "path": ["api", "admin", "drives", ":id", "complete"], "variable": [{ "key": "id", "value": "{{driveId}}" }] } },
+          "response": []
+        },
+        {
+          "name": "Cancel Drive",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"cancellationReason\": \"Low donor turnout\"\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/api/admin/drives/:id/cancel", "host": ["{{baseUrl}}"], "path": ["api", "admin", "drives", ":id", "cancel"], "variable": [{ "key": "id", "value": "{{driveId}}" }] } },
+          "response": []
+        },
+        {
+          "name": "Approve Drive (Admin)",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] }, "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"driveId\": \"{{driveId}}\",\n  \"remarks\": \"Approved\"\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/api/admin/drives/approve", "host": ["{{baseUrl}}"], "path": ["api", "admin", "drives", "approve"] } },
+          "response": []
+        },
+        {
+          "name": "Reject Drive (Admin)",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] }, "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"driveId\": \"{{driveId}}\",\n  \"rejectionReason\": \"Incomplete details\"\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/api/admin/drives/reject", "host": ["{{baseUrl}}"], "path": ["api", "admin", "drives", "reject"] } },
+          "response": []
+        },
+        {
+          "name": "Delete Drive (Admin)",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] }, "method": "DELETE", "header": [], "url": { "raw": "{{baseUrl}}/api/admin/drives/:id", "host": ["{{baseUrl}}"], "path": ["api", "admin", "drives", ":id"], "variable": [{ "key": "id", "value": "{{driveId}}" }] } },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "15 Admin - Hospital Blood Requests",
+      "description": "`routes/admin/HospitalBloodRequestRoutes.js` → `/api/admin/requests`.",
+      "item": [
+        {
+          "name": "Create Request",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"hospitalId\": \"{{hospitalId}}\",\n  \"bloodBankId\": \"{{bloodBankId}}\",\n  \"bloodGroup\": \"O-\",\n  \"unitsRequired\": 2,\n  \"urgency\": \"CRITICAL\",\n  \"patientDetails\": { \"name\": \"Riya\", \"age\": 30, \"condition\": \"Surgery\" }\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/api/admin/requests/create", "host": ["{{baseUrl}}"], "path": ["api", "admin", "requests", "create"] } },
+          "response": []
+        },
+        {
+          "name": "Get All Requests",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/admin/requests/all?status=PENDING&urgency=CRITICAL&page=1&limit=20", "host": ["{{baseUrl}}"], "path": ["api", "admin", "requests", "all"], "query": [{ "key": "status", "value": "PENDING" }, { "key": "urgency", "value": "CRITICAL" }, { "key": "page", "value": "1" }, { "key": "limit", "value": "20" }] } },
+          "response": []
+        },
+        {
+          "name": "Get Urgent Requests",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/admin/requests/urgent", "host": ["{{baseUrl}}"], "path": ["api", "admin", "requests", "urgent"] } },
+          "response": []
+        },
+        {
+          "name": "Get Request By Id",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/admin/requests/id/:id", "host": ["{{baseUrl}}"], "path": ["api", "admin", "requests", "id", ":id"], "variable": [{ "key": "id", "value": "{{requestId}}" }] } },
+          "response": []
+        },
+        {
+          "name": "Get Request With Details",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/admin/requests/details/:id", "host": ["{{baseUrl}}"], "path": ["api", "admin", "requests", "details", ":id"], "variable": [{ "key": "id", "value": "{{requestId}}" }] } },
+          "response": []
+        },
+        {
+          "name": "Get Requests By Hospital",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/admin/requests/hospital/:hospitalId", "host": ["{{baseUrl}}"], "path": ["api", "admin", "requests", "hospital", ":hospitalId"], "variable": [{ "key": "hospitalId", "value": "{{hospitalId}}" }] } },
+          "response": []
+        },
+        {
+          "name": "Get Requests By Blood Bank",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/admin/requests/bloodbank/:bloodBankId", "host": ["{{baseUrl}}"], "path": ["api", "admin", "requests", "bloodbank", ":bloodBankId"], "variable": [{ "key": "bloodBankId", "value": "{{bloodBankId}}" }] } },
+          "response": []
+        },
+        {
+          "name": "Cancel Request",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"cancellationReason\": \"Patient shifted\"\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/api/admin/requests/:id/cancel", "host": ["{{baseUrl}}"], "path": ["api", "admin", "requests", ":id", "cancel"], "variable": [{ "key": "id", "value": "{{requestId}}" }] } },
+          "response": []
+        },
+        {
+          "name": "Add Communication Log",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"message\": \"Called blood bank\",\n  \"by\": \"hospital\"\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/api/admin/requests/:id/communication", "host": ["{{baseUrl}}"], "path": ["api", "admin", "requests", ":id", "communication"], "variable": [{ "key": "id", "value": "{{requestId}}" }] } },
+          "response": []
+        },
+        {
+          "name": "Blood Bank Responds",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"status\": \"ACCEPTED\",\n  \"message\": \"Units available\"\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/api/admin/requests/:id/respond", "host": ["{{baseUrl}}"], "path": ["api", "admin", "requests", ":id", "respond"], "variable": [{ "key": "id", "value": "{{requestId}}" }] } },
+          "response": []
+        },
+        {
+          "name": "Start Processing",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"staffId\": \"BB-STAFF-01\"\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/api/admin/requests/:id/process", "host": ["{{baseUrl}}"], "path": ["api", "admin", "requests", ":id", "process"], "variable": [{ "key": "id", "value": "{{requestId}}" }] } },
+          "response": []
+        },
+        {
+          "name": "Fulfill Request",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"unitsFulfilled\": 2,\n  \"batchNumbers\": [\"BATCH-101\"],\n  \"expiryDates\": [\"2026-11-01\"],\n  \"collectionMethod\": \"pickup\"\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/api/admin/requests/:id/fulfill", "host": ["{{baseUrl}}"], "path": ["api", "admin", "requests", ":id", "fulfill"], "variable": [{ "key": "id", "value": "{{requestId}}" }] } },
+          "response": []
+        },
+        {
+          "name": "Reject Request",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"rejectionReason\": \"Out of stock\",\n  \"rejectedBy\": \"BB-STAFF-01\"\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/api/admin/requests/:id/reject", "host": ["{{baseUrl}}"], "path": ["api", "admin", "requests", ":id", "reject"], "variable": [{ "key": "id", "value": "{{requestId}}" }] } },
+          "response": []
+        },
+        {
+          "name": "Assign Blood Bank (Admin)",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"bloodBankId\": \"{{bloodBankId}}\"\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/api/admin/requests/:id/assign", "host": ["{{baseUrl}}"], "path": ["api", "admin", "requests", ":id", "assign"], "variable": [{ "key": "id", "value": "{{requestId}}" }] } },
+          "response": []
+        },
+        {
+          "name": "Approve Request (Admin)",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] }, "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"requestId\": \"{{requestId}}\",\n  \"remarks\": \"Emergency approved\"\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/api/admin/requests/approve", "host": ["{{baseUrl}}"], "path": ["api", "admin", "requests", "approve"] } },
+          "response": []
+        },
+        {
+          "name": "Get Request Statistics",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/admin/requests/stats/requests", "host": ["{{baseUrl}}"], "path": ["api", "admin", "requests", "stats", "requests"] } },
+          "response": []
+        },
+        {
+          "name": "Get Average Response Time",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/admin/requests/stats/response-time", "host": ["{{baseUrl}}"], "path": ["api", "admin", "requests", "stats", "response-time"] } },
+          "response": []
+        },
+        {
+          "name": "Delete Request",
+          "request": { "method": "DELETE", "header": [], "url": { "raw": "{{baseUrl}}/api/admin/requests/:id", "host": ["{{baseUrl}}"], "path": ["api", "admin", "requests", ":id"], "variable": [{ "key": "id", "value": "{{requestId}}" }] } },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "16 Organization Users",
+      "description": "`routes/organization/OrganizationUsersRoutes.js` → `/api/organization-users`. Login as an organization ADMIN first (saves `{{token}}`).",
+      "item": [
+        {
+          "name": "Create Organization User",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] }, "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"organizationCode\": \"{{organizationCode}}\",\n  \"name\": \"Staff One\",\n  \"email\": \"staff1@hospital.com\",\n  \"password\": \"password123\",\n  \"role\": \"STAFF\",\n  \"status\": \"ACTIVE\"\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/api/organization-users/create", "host": ["{{baseUrl}}"], "path": ["api", "organization-users", "create"] } },
+          "response": []
+        },
+        {
+          "name": "Get Organization Users",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] }, "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/organization-users/:organizationCode?page=1&limit=10", "host": ["{{baseUrl}}"], "path": ["api", "organization-users", ":organizationCode"], "variable": [{ "key": "organizationCode", "value": "{{organizationCode}}" }], "query": [{ "key": "page", "value": "1" }, { "key": "limit", "value": "10" }] } },
+          "response": []
+        },
+        {
+          "name": "Get User By Code",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] }, "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/organization-users/:organizationCode/user/:userCode", "host": ["{{baseUrl}}"], "path": ["api", "organization-users", ":organizationCode", "user", ":userCode"], "variable": [{ "key": "organizationCode", "value": "{{organizationCode}}" }, { "key": "userCode", "value": "{{userCode}}" }] } },
+          "response": []
+        },
+        {
+          "name": "Get Users By Role",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] }, "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/organization-users/:organizationCode/role/:role", "host": ["{{baseUrl}}"], "path": ["api", "organization-users", ":organizationCode", "role", ":role"], "variable": [{ "key": "organizationCode", "value": "{{organizationCode}}" }, { "key": "role", "value": "STAFF" }] } },
+          "response": []
+        },
+        {
+          "name": "Get Organization Users Stats",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] }, "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/organization-users/:organizationCode/stats", "host": ["{{baseUrl}}"], "path": ["api", "organization-users", ":organizationCode", "stats"], "variable": [{ "key": "organizationCode", "value": "{{organizationCode}}" }] } },
+          "response": []
+        },
+        {
+          "name": "Update User",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] }, "method": "PUT", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"name\": \"Staff One Updated\",\n  \"role\": \"STAFF\",\n  \"status\": \"ACTIVE\"\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/api/organization-users/:organizationCode/:userCode", "host": ["{{baseUrl}}"], "path": ["api", "organization-users", ":organizationCode", ":userCode"], "variable": [{ "key": "organizationCode", "value": "{{organizationCode}}" }, { "key": "userCode", "value": "{{userCode}}" }] } },
+          "response": []
+        },
+        {
+          "name": "Change User Password",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] }, "method": "PUT", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"currentPassword\": \"password123\",\n  \"newPassword\": \"newPassword123\"\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/api/organization-users/:organizationCode/:userCode/password", "host": ["{{baseUrl}}"], "path": ["api", "organization-users", ":organizationCode", ":userCode", "password"], "variable": [{ "key": "organizationCode", "value": "{{organizationCode}}" }, { "key": "userCode", "value": "{{userCode}}" }] } },
+          "response": []
+        },
+        {
+          "name": "Delete User",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] }, "method": "DELETE", "header": [], "url": { "raw": "{{baseUrl}}/api/organization-users/:organizationCode/:userCode", "host": ["{{baseUrl}}"], "path": ["api", "organization-users", ":organizationCode", ":userCode"], "variable": [{ "key": "organizationCode", "value": "{{organizationCode}}" }, { "key": "userCode", "value": "{{userCode}}" }] } },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "17 Hospitals",
+      "description": "`routes/hospital/HospitalRoutes.js` → `/api/hospitals`.",
+      "item": [
+        {
+          "name": "Create Hospital",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"name\": \"City Care Hospital\",\n  \"registrationNumber\": \"REG-DEL-1001\",\n  \"email\": \"contact@citycare.test\",\n  \"phone\": \"9876543210\",\n  \"address\": \"12 MG Road\",\n  \"city\": \"New Delhi\",\n  \"coordinates\": [77.209, 28.6139]\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/api/hospitals", "host": ["{{baseUrl}}"], "path": ["api", "hospitals"] } },
+          "response": []
+        },
+        {
+          "name": "Get All Hospitals",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/hospitals?page=1&limit=10", "host": ["{{baseUrl}}"], "path": ["api", "hospitals"], "query": [{ "key": "page", "value": "1" }, { "key": "limit", "value": "10" }] } },
+          "response": []
+        },
+        {
+          "name": "Get Hospital By Id",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/hospitals/:id", "host": ["{{baseUrl}}"], "path": ["api", "hospitals", ":id"], "variable": [{ "key": "id", "value": "{{hospitalId}}" }] } },
+          "response": []
+        },
+        {
+          "name": "Get Nearby Hospitals",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/hospitals/nearby?longitude=77.2090&latitude=28.6139&maxDistance=5000", "host": ["{{baseUrl}}"], "path": ["api", "hospitals", "nearby"], "query": [{ "key": "longitude", "value": "77.2090" }, { "key": "latitude", "value": "28.6139" }, { "key": "maxDistance", "value": "5000" }] } },
+          "response": []
+        },
+        {
+          "name": "Get Hospital Stats",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/hospitals/stats", "host": ["{{baseUrl}}"], "path": ["api", "hospitals", "stats"] } },
+          "response": []
+        },
+        {
+          "name": "Get Hospitals By City",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/hospitals/stats/by-city", "host": ["{{baseUrl}}"], "path": ["api", "hospitals", "stats", "by-city"] } },
+          "response": []
+        },
+        {
+          "name": "Update Hospital",
+          "request": { "method": "PUT", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"phone\": \"9876500000\",\n  \"address\": \"22 MG Road\"\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/api/hospitals/:id", "host": ["{{baseUrl}}"], "path": ["api", "hospitals", ":id"], "variable": [{ "key": "id", "value": "{{hospitalId}}" }] } },
+          "response": []
+        },
+        {
+          "name": "Delete Hospital",
+          "request": { "method": "DELETE", "header": [], "url": { "raw": "{{baseUrl}}/api/hospitals/:id", "host": ["{{baseUrl}}"], "path": ["api", "hospitals", ":id"], "variable": [{ "key": "id", "value": "{{hospitalId}}" }] } },
+          "response": []
+        },
+        {
+          "name": "Verify Hospital",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"adminId\": \"REPLACE_WITH_ADMIN_ID\",\n  \"reason\": \"Documents verified\"\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/api/hospitals/:id/verify", "host": ["{{baseUrl}}"], "path": ["api", "hospitals", ":id", "verify"], "variable": [{ "key": "id", "value": "{{hospitalId}}" }] } },
+          "response": []
+        },
+        {
+          "name": "Reject Hospital",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"adminId\": \"REPLACE_WITH_ADMIN_ID\",\n  \"reason\": \"Invalid documents\"\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/api/hospitals/:id/reject", "host": ["{{baseUrl}}"], "path": ["api", "hospitals", ":id", "reject"], "variable": [{ "key": "id", "value": "{{hospitalId}}" }] } },
+          "response": []
+        },
+        {
+          "name": "Suspend Hospital",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"adminId\": \"REPLACE_WITH_ADMIN_ID\",\n  \"reason\": \"Repeated violations\"\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/api/hospitals/:id/suspend", "host": ["{{baseUrl}}"], "path": ["api", "hospitals", ":id", "suspend"], "variable": [{ "key": "id", "value": "{{hospitalId}}" }] } },
+          "response": []
+        },
+        {
+          "name": "Get Hospital Actions",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/hospitals/:id/actions?page=1&limit=10", "host": ["{{baseUrl}}"], "path": ["api", "hospitals", ":id", "actions"], "variable": [{ "key": "id", "value": "{{hospitalId}}" }], "query": [{ "key": "page", "value": "1" }, { "key": "limit", "value": "10" }] } },
+          "response": []
+        },
+        {
+          "name": "Get Hospital Blood Requests",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/hospitals/:id/blood-requests", "host": ["{{baseUrl}}"], "path": ["api", "hospitals", ":id", "blood-requests"], "variable": [{ "key": "id", "value": "{{hospitalId}}" }] } },
+          "response": []
+        },
+        {
+          "name": "Get Hospital NGO Drives",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/hospitals/:id/ngo-drives", "host": ["{{baseUrl}}"], "path": ["api", "hospitals", ":id", "ngo-drives"], "variable": [{ "key": "id", "value": "{{hospitalId}}" }] } },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "18 Hospital - NGO Drives",
+      "description": "`routes/hospital/HospitalNgoDriveRoutes.js` → `/api/hospital-ngo-drives`.",
+      "item": [
+        {
+          "name": "Create Drive Request",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"hospitalId\": \"{{hospitalId}}\",\n  \"ngoId\": \"{{ngoId}}\",\n  \"driveTitle\": \"Monthly Donation Drive\",\n  \"location\": \"Hospital Campus, Delhi\",\n  \"driveDate\": \"2026-10-20\",\n  \"expectedDonors\": 60\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/api/hospital-ngo-drives", "host": ["{{baseUrl}}"], "path": ["api", "hospital-ngo-drives"] } },
+          "response": []
+        },
+        {
+          "name": "Get Drive By Id",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/hospital-ngo-drives/:id", "host": ["{{baseUrl}}"], "path": ["api", "hospital-ngo-drives", ":id"], "variable": [{ "key": "id", "value": "{{driveId}}" }] } },
+          "response": []
+        },
+        {
+          "name": "Update Drive",
+          "request": { "method": "PUT", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"driveTitle\": \"Updated Drive\"\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/api/hospital-ngo-drives/:id", "host": ["{{baseUrl}}"], "path": ["api", "hospital-ngo-drives", ":id"], "variable": [{ "key": "id", "value": "{{driveId}}" }] } },
+          "response": []
+        },
+        {
+          "name": "Delete Drive",
+          "request": { "method": "DELETE", "header": [], "url": { "raw": "{{baseUrl}}/api/hospital-ngo-drives/:id", "host": ["{{baseUrl}}"], "path": ["api", "hospital-ngo-drives", ":id"], "variable": [{ "key": "id", "value": "{{driveId}}" }] } },
+          "response": []
+        },
+        {
+          "name": "Get Drives By Hospital",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/hospital-ngo-drives/hospital/:hospitalId?status=PENDING&page=1&limit=10", "host": ["{{baseUrl}}"], "path": ["api", "hospital-ngo-drives", "hospital", ":hospitalId"], "variable": [{ "key": "hospitalId", "value": "{{hospitalId}}" }], "query": [{ "key": "status", "value": "PENDING" }, { "key": "page", "value": "1" }, { "key": "limit", "value": "10" }] } },
+          "response": []
+        },
+        {
+          "name": "Get Upcoming Drives By Hospital",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/hospital-ngo-drives/hospital/:hospitalId/upcoming", "host": ["{{baseUrl}}"], "path": ["api", "hospital-ngo-drives", "hospital", ":hospitalId", "upcoming"], "variable": [{ "key": "hospitalId", "value": "{{hospitalId}}" }] } },
+          "response": []
+        },
+        {
+          "name": "Get Hospital Drive Stats",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/hospital-ngo-drives/hospital/:hospitalId/stats", "host": ["{{baseUrl}}"], "path": ["api", "hospital-ngo-drives", "hospital", ":hospitalId", "stats"], "variable": [{ "key": "hospitalId", "value": "{{hospitalId}}" }] } },
+          "response": []
+        },
+        {
+          "name": "Get Drives By NGO",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/hospital-ngo-drives/ngo/:ngoId", "host": ["{{baseUrl}}"], "path": ["api", "hospital-ngo-drives", "ngo", ":ngoId"], "variable": [{ "key": "ngoId", "value": "{{ngoId}}" }] } },
+          "response": []
+        },
+        {
+          "name": "Get NGO Drive Stats",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/hospital-ngo-drives/ngo/:ngoId/stats", "host": ["{{baseUrl}}"], "path": ["api", "hospital-ngo-drives", "ngo", ":ngoId", "stats"], "variable": [{ "key": "ngoId", "value": "{{ngoId}}" }] } },
+          "response": []
+        },
+        {
+          "name": "Accept Drive",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"note\": \"NGO accepted\"\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/api/hospital-ngo-drives/:id/accept", "host": ["{{baseUrl}}"], "path": ["api", "hospital-ngo-drives", ":id", "accept"], "variable": [{ "key": "id", "value": "{{driveId}}" }] } },
+          "response": []
+        },
+        {
+          "name": "Reject Drive",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"rejectionReason\": \"Date conflict\"\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/api/hospital-ngo-drives/:id/reject", "host": ["{{baseUrl}}"], "path": ["api", "hospital-ngo-drives", ":id", "reject"], "variable": [{ "key": "id", "value": "{{driveId}}" }] } },
+          "response": []
+        },
+        {
+          "name": "Complete Drive",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"summary\": \"Completed with 55 donors\"\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/api/hospital-ngo-drives/:id/complete", "host": ["{{baseUrl}}"], "path": ["api", "hospital-ngo-drives", ":id", "complete"], "variable": [{ "key": "id", "value": "{{driveId}}" }] } },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "19 Hospital - Blood Requests",
+      "description": "`routes/hospital/HospitalBloodRequestRoutes.js` → `/api/hospital-blood-requests`.",
+      "item": [
+        {
+          "name": "Create Blood Request",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"hospitalId\": \"{{hospitalId}}\",\n  \"bloodBankId\": \"{{bloodBankId}}\",\n  \"bloodGroup\": \"O-\",\n  \"unitsRequired\": 2,\n  \"urgency\": \"CRITICAL\",\n  \"notes\": \"Emergency surgery\"\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/api/hospital-blood-requests", "host": ["{{baseUrl}}"], "path": ["api", "hospital-blood-requests"] } },
+          "response": []
+        },
+        {
+          "name": "Get Critical Requests",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/hospital-blood-requests/critical?limit=20", "host": ["{{baseUrl}}"], "path": ["api", "hospital-blood-requests", "critical"], "query": [{ "key": "limit", "value": "20" }] } },
+          "response": []
+        },
+        {
+          "name": "Get Request By Id",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/hospital-blood-requests/:id", "host": ["{{baseUrl}}"], "path": ["api", "hospital-blood-requests", ":id"], "variable": [{ "key": "id", "value": "{{requestId}}" }] } },
+          "response": []
+        },
+        {
+          "name": "Update Request",
+          "request": { "method": "PUT", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"unitsRequired\": 3,\n  \"urgency\": \"HIGH\"\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/api/hospital-blood-requests/:id", "host": ["{{baseUrl}}"], "path": ["api", "hospital-blood-requests", ":id"], "variable": [{ "key": "id", "value": "{{requestId}}" }] } },
+          "response": []
+        },
+        {
+          "name": "Delete Request",
+          "request": { "method": "DELETE", "header": [], "url": { "raw": "{{baseUrl}}/api/hospital-blood-requests/:id", "host": ["{{baseUrl}}"], "path": ["api", "hospital-blood-requests", ":id"], "variable": [{ "key": "id", "value": "{{requestId}}" }] } },
+          "response": []
+        },
+        {
+          "name": "Get Requests By Hospital",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/hospital-blood-requests/hospital/:hospitalId?status=PENDING&page=1&limit=10", "host": ["{{baseUrl}}"], "path": ["api", "hospital-blood-requests", "hospital", ":hospitalId"], "variable": [{ "key": "hospitalId", "value": "{{hospitalId}}" }], "query": [{ "key": "status", "value": "PENDING" }, { "key": "page", "value": "1" }, { "key": "limit", "value": "10" }] } },
+          "response": []
+        },
+        {
+          "name": "Get Hospital Request Stats",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/hospital-blood-requests/hospital/:hospitalId/stats", "host": ["{{baseUrl}}"], "path": ["api", "hospital-blood-requests", "hospital", ":hospitalId", "stats"], "variable": [{ "key": "hospitalId", "value": "{{hospitalId}}" }] } },
+          "response": []
+        },
+        {
+          "name": "Get Requests By Blood Bank",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/hospital-blood-requests/bloodbank/:bloodBankId?status=PENDING", "host": ["{{baseUrl}}"], "path": ["api", "hospital-blood-requests", "bloodbank", ":bloodBankId"], "variable": [{ "key": "bloodBankId", "value": "{{bloodBankId}}" }], "query": [{ "key": "status", "value": "PENDING" }] } },
+          "response": []
+        },
+        {
+          "name": "Get Blood Bank Request Stats",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/hospital-blood-requests/bloodbank/:bloodBankId/stats", "host": ["{{baseUrl}}"], "path": ["api", "hospital-blood-requests", "bloodbank", ":bloodBankId", "stats"], "variable": [{ "key": "bloodBankId", "value": "{{bloodBankId}}" }] } },
+          "response": []
+        },
+        {
+          "name": "Accept Request (Blood Bank)",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"bloodBankResponse\": { \"status\": \"ACCEPTED\", \"eta\": 25 }\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/api/hospital-blood-requests/:id/accept", "host": ["{{baseUrl}}"], "path": ["api", "hospital-blood-requests", ":id", "accept"], "variable": [{ "key": "id", "value": "{{requestId}}" }] } },
+          "response": []
+        },
+        {
+          "name": "Reject Request (Blood Bank)",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"rejectionReason\": \"Out of stock\"\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/api/hospital-blood-requests/:id/reject", "host": ["{{baseUrl}}"], "path": ["api", "hospital-blood-requests", ":id", "reject"], "variable": [{ "key": "id", "value": "{{requestId}}" }] } },
+          "response": []
+        },
+        {
+          "name": "Complete Request (Blood Bank)",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"unitsFulfilled\": 2\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/api/hospital-blood-requests/:id/complete", "host": ["{{baseUrl}}"], "path": ["api", "hospital-blood-requests", ":id", "complete"], "variable": [{ "key": "id", "value": "{{requestId}}" }] } },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "20 NGO - Camps, Slots & Registrations",
+      "description": "`routes/ngo/NgoRoutes.js` → `/api/ngo` (Bearer `{{token}}`). Login as NGO ADMIN (camp CRUD) or `user` (registrations).",
+      "item": [
+        {
+          "name": "Create Camp (NGO Admin)",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] }, "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"campName\": \"Red Cross Blood Camp\",\n  \"location\": \"Central Hospital, New Delhi\",\n  \"city\": \"New Delhi\",\n  \"state\": \"Delhi\",\n  \"pincode\": \"110001\",\n  \"startDate\": \"2026-10-10\",\n  \"endDate\": \"2026-10-12\",\n  \"description\": \"Monthly camp\",\n  \"contactPersonName\": \"Dr. Sharma\",\n  \"contactMobile\": \"9876543210\",\n  \"expectedDonors\": 100\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/api/ngo/camp", "host": ["{{baseUrl}}"], "path": ["api", "ngo", "camp"] } },
+          "response": []
+        },
+        {
+          "name": "Get My Camps (NGO Admin)",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] }, "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/ngo/camp", "host": ["{{baseUrl}}"], "path": ["api", "ngo", "camp"] } },
+          "response": []
+        },
+        {
+          "name": "Get Camp By Id",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] }, "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/ngo/camp/:campId", "host": ["{{baseUrl}}"], "path": ["api", "ngo", "camp", ":campId"], "variable": [{ "key": "campId", "value": "{{campId}}" }] } },
+          "response": []
+        },
+        {
+          "name": "Update Camp",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] }, "method": "PUT", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"campName\": \"Updated Camp Name\",\n  \"expectedDonors\": 120\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/api/ngo/camp/:campId", "host": ["{{baseUrl}}"], "path": ["api", "ngo", "camp", ":campId"], "variable": [{ "key": "campId", "value": "{{campId}}" }] } },
+          "response": []
+        },
+        {
+          "name": "Delete Camp",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] }, "method": "DELETE", "header": [], "url": { "raw": "{{baseUrl}}/api/ngo/camp/:campId", "host": ["{{baseUrl}}"], "path": ["api", "ngo", "camp", ":campId"], "variable": [{ "key": "campId", "value": "{{campId}}" }] } },
+          "response": []
+        },
+        {
+          "name": "Create Slot",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] }, "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"campId\": \"{{campId}}\",\n  \"slotTime\": \"06:00 AM - 08:00 AM\",\n  \"maxDonors\": 10\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/api/ngo/slot", "host": ["{{baseUrl}}"], "path": ["api", "ngo", "slot"] } },
+          "response": []
+        },
+        {
+          "name": "Get Slots By Camp",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] }, "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/ngo/camp/:campId/slots", "host": ["{{baseUrl}}"], "path": ["api", "ngo", "camp", ":campId", "slots"], "variable": [{ "key": "campId", "value": "{{campId}}" }] } },
+          "response": []
+        },
+        {
+          "name": "Update Slot",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] }, "method": "PUT", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"maxDonors\": 15\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/api/ngo/slot/:slotId", "host": ["{{baseUrl}}"], "path": ["api", "ngo", "slot", ":slotId"], "variable": [{ "key": "slotId", "value": "{{slotId}}" }] } },
+          "response": []
+        },
+        {
+          "name": "Delete Slot",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] }, "method": "DELETE", "header": [], "url": { "raw": "{{baseUrl}}/api/ngo/slot/:slotId", "host": ["{{baseUrl}}"], "path": ["api", "ngo", "slot", ":slotId"], "variable": [{ "key": "slotId", "value": "{{slotId}}" }] } },
+          "response": []
+        },
+        {
+          "name": "Register Donor To Slot (user)",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] }, "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"campId\": \"{{campId}}\",\n  \"slotId\": \"{{slotId}}\",\n  \"bloodGroup\": \"O+\",\n  \"mobileNumber\": \"9876543210\",\n  \"address\": \"12 MG Road, Delhi\"\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/api/ngo/register", "host": ["{{baseUrl}}"], "path": ["api", "ngo", "register"] } },
+          "response": []
+        },
+        {
+          "name": "Get My Registrations (user)",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] }, "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/ngo/registrations", "host": ["{{baseUrl}}"], "path": ["api", "ngo", "registrations"] } },
+          "response": []
+        },
+        {
+          "name": "Get Camp Registrations (NGO owner)",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] }, "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/ngo/camp/:campId/registrations", "host": ["{{baseUrl}}"], "path": ["api", "ngo", "camp", ":campId", "registrations"], "variable": [{ "key": "campId", "value": "{{campId}}" }] } },
+          "response": []
+        },
+        {
+          "name": "Cancel Registration (user)",
+          "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] }, "method": "DELETE", "header": [], "url": { "raw": "{{baseUrl}}/api/ngo/registration/:registrationId", "host": ["{{baseUrl}}"], "path": ["api", "ngo", "registration", ":registrationId"], "variable": [{ "key": "registrationId", "value": "{{registrationId}}" }] } },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "21 Donor",
+      "description": "`routes/donor/DonorRoutes.js` → `/api/donor` (public donor flows from landing page).",
+      "item": [
+        {
+          "name": "Register Donor (direct)",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"name\": \"Ravi Kumar\",\n  \"age\": 28,\n  \"gender\": \"Male\",\n  \"bloodGroup\": \"O+\",\n  \"mobileNumber\": \"9876543210\",\n  \"city\": \"New Delhi\",\n  \"address\": \"12 MG Road\",\n  \"email\": \"ravi@bloodbridge.test\",\n  \"donationDate\": \"2026-10-05\",\n  \"donationTime\": \"06:00 AM - 08:00 AM\",\n  \"nextDonationDate\": \"2027-01-03\",\n  \"campId\": \"{{campId}}\",\n  \"campName\": \"Red Cross Blood Camp\",\n  \"slotId\": \"{{slotId}}\",\n  \"slotTime\": \"06:00 AM - 08:00 AM\"\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/api/donor/register", "host": ["{{baseUrl}}"], "path": ["api", "donor", "register"] } },
+          "response": []
+        },
+        {
+          "name": "Register Donor For Camp",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"name\": \"Ravi Kumar\",\n  \"age\": 28,\n  \"gender\": \"Male\",\n  \"bloodGroup\": \"O+\",\n  \"mobileNumber\": \"9876543210\",\n  \"city\": \"New Delhi\",\n  \"campId\": \"{{campId}}\",\n  \"campName\": \"Red Cross Blood Camp\",\n  \"slotId\": \"{{slotId}}\",\n  \"slotTime\": \"06:00 AM - 08:00 AM\"\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/api/donor/register-for-camp", "host": ["{{baseUrl}}"], "path": ["api", "donor", "register-for-camp"] } },
+          "response": []
+        },
+        {
+          "name": "Record Donation",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"donationId\": \"REPLACE_WITH_DONATION_ID\",\n  \"donationDate\": \"2026-10-05\"\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/api/donor/donate", "host": ["{{baseUrl}}"], "path": ["api", "donor", "donate"] } },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "22 Public Directory",
+      "description": "`routes/BloodBankRoutes.js` and `routes/NgoPublicRoutes.js` — public listings.",
+      "item": [
+        {
+          "name": "Get Public Blood Banks",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/blood-banks?city=Delhi&page=1&limit=50", "host": ["{{baseUrl}}"], "path": ["api", "blood-banks"], "query": [{ "key": "city", "value": "Delhi" }, { "key": "page", "value": "1" }, { "key": "limit", "value": "50" }] } },
+          "response": []
+        },
+        {
+          "name": "Get Verified Blood Banks",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/blood-banks/verified", "host": ["{{baseUrl}}"], "path": ["api", "blood-banks", "verified"] } },
+          "response": []
+        },
+        {
+          "name": "Get Blood Bank By Id (public)",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/blood-banks/:id", "host": ["{{baseUrl}}"], "path": ["api", "blood-banks", ":id"], "variable": [{ "key": "id", "value": "{{bloodBankId}}" }] } },
+          "response": []
+        },
+        {
+          "name": "Get Public NGOs",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/public-ngos?city=Delhi&page=1&limit=50", "host": ["{{baseUrl}}"], "path": ["api", "public-ngos"], "query": [{ "key": "city", "value": "Delhi" }, { "key": "page", "value": "1" }, { "key": "limit", "value": "50" }] } },
+          "response": []
+        },
+        {
+          "name": "Get Verified NGOs",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/public-ngos/verified", "host": ["{{baseUrl}}"], "path": ["api", "public-ngos", "verified"] } },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "23 Monitoring",
+      "description": "`routes/monitoring/MonitoringRoutes.js` → `/api/monitoring`.",
+      "item": [
+        {
+          "name": "System Health",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/monitoring/health", "host": ["{{baseUrl}}"], "path": ["api", "monitoring", "health"] } },
+          "response": []
+        },
+        {
+          "name": "Performance",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/monitoring/performance?timeRange=1h", "host": ["{{baseUrl}}"], "path": ["api", "monitoring", "performance"], "query": [{ "key": "timeRange", "value": "1h" }] } },
+          "response": []
+        },
+        {
+          "name": "Metrics",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/monitoring/metrics", "host": ["{{baseUrl}}"], "path": ["api", "monitoring", "metrics"] } },
+          "response": []
+        },
+        {
+          "name": "Alerts",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/monitoring/alerts", "host": ["{{baseUrl}}"], "path": ["api", "monitoring", "alerts"] } },
+          "response": []
+        },
+        {
+          "name": "Database",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/monitoring/database", "host": ["{{baseUrl}}"], "path": ["api", "monitoring", "database"] } },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "24 Compliance",
+      "description": "`routes/compliance/ComplianceRoutes.js` → `/api/compliance` (GDPR / HIPAA utilities).",
+      "item": [
+        {
+          "name": "Compliance Status",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/compliance/status", "host": ["{{baseUrl}}"], "path": ["api", "compliance", "status"] } },
+          "response": []
+        },
+        {
+          "name": "Encrypt Data",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"data\": { \"email\": \"ravi@bloodbridge.test\", \"phone\": \"9876543210\" }\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/api/compliance/encrypt", "host": ["{{baseUrl}}"], "path": ["api", "compliance", "encrypt"] } },
+          "response": []
+        },
+        {
+          "name": "Decrypt Data",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"encrypted\": \"REPLACE_WITH_ENCRYPTED_STRING\"\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/api/compliance/decrypt", "host": ["{{baseUrl}}"], "path": ["api", "compliance", "decrypt"] } },
+          "response": []
+        },
+        {
+          "name": "Mask PII",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"text\": \"Contact ravi@bloodbridge.test or 9876543210\"\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/api/compliance/mask", "host": ["{{baseUrl}}"], "path": ["api", "compliance", "mask"] } },
+          "response": []
+        },
+        {
+          "name": "Get Audit Logs",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/compliance/audit-logs?limit=100&offset=0", "host": ["{{baseUrl}}"], "path": ["api", "compliance", "audit-logs"], "query": [{ "key": "limit", "value": "100" }, { "key": "offset", "value": "0" }] } },
+          "response": []
+        },
+        {
+          "name": "Create DSAR Request",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"userCode\": \"{{userCode}}\",\n  \"email\": \"user@hospital.com\",\n  \"requestType\": \"access\"\n}", "options": { "raw": { "language": "json" } } }, "url": { "raw": "{{baseUrl}}/api/compliance/dsar", "host": ["{{baseUrl}}"], "path": ["api", "compliance", "dsar"] } },
+          "response": []
+        },
+        {
+          "name": "Run Data Retention Cleanup",
+          "request": { "method": "POST", "header": [], "url": { "raw": "{{baseUrl}}/api/compliance/data-retention/cleanup", "host": ["{{baseUrl}}"], "path": ["api", "compliance", "data-retention", "cleanup"] } },
+          "response": []
+        },
+        {
+          "name": "Get Data Retention Policy",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/compliance/data-retention/policy", "host": ["{{baseUrl}}"], "path": ["api", "compliance", "data-retention", "policy"] } },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "25 Debug & Sync (Dev Only)",
+      "description": "`routes/DebugRoutes.js` and `routes/SyncRoutes.js` — development only, not for production.",
+      "item": [
+        {
+          "name": "Debug Check Organization/Hospital",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/debug/check/:id", "host": ["{{baseUrl}}"], "path": ["api", "debug", "check", ":id"], "variable": [{ "key": "id", "value": "{{organizationCode}}" }] } },
+          "response": []
+        },
+        {
+          "name": "Debug List Hospitals",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/debug/hospitals", "host": ["{{baseUrl}}"], "path": ["api", "debug", "hospitals"] } },
+          "response": []
+        },
+        {
+          "name": "Debug List Organizations",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/api/debug/organizations", "host": ["{{baseUrl}}"], "path": ["api", "debug", "organizations"] } },
+          "response": []
+        },
+        {
+          "name": "Sync Create Hospital From Organization",
+          "request": { "method": "POST", "header": [], "url": { "raw": "{{baseUrl}}/api/sync/create-hospital/:organizationId", "host": ["{{baseUrl}}"], "path": ["api", "sync", "create-hospital", ":organizationId"], "variable": [{ "key": "organizationId", "value": "REPLACE_WITH_ORG_OBJECT_ID" }] } },
+          "response": []
+        },
+        {
+          "name": "Sync All Hospitals",
+          "request": { "method": "POST", "header": [], "url": { "raw": "{{baseUrl}}/api/sync/sync-all-hospitals", "host": ["{{baseUrl}}"], "path": ["api", "sync", "sync-all-hospitals"] } },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
