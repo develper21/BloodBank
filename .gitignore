@@ -111,8 +111,6 @@ temp/
 # Redis
 dump.rdb
 
-# Docker
-.dockerignore
 
 # Secrets (never commit!)
 *.pem
@@ -124,6 +122,7 @@ secrets/
 # IDE specific
 .vscode/settings.json
 .idea/workspace.xml
+.freebuff
 
 # Misc
 *.tsbuildinfo
