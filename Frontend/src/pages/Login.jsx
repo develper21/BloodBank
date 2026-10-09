@@ -37,18 +37,33 @@ export default function Login() {
 
     try {
       // Validate inputs
+      const validationErrors = [];
       if (!formData.organizationCode.trim()) {
-        setErrors(["Organization code is required"]);
-        setLoading(false);
-        return;
+        validationErrors.push("Organization code is required");
+      } else {
+        const orgCodeRegex = /^[A-Z]{3,4}-[A-Z]{3}-\d{3}$/;
+        if (!orgCodeRegex.test(formData.organizationCode)) {
+          validationErrors.push("Invalid organization code format");
+        }
       }
+
       if (!formData.email.trim()) {
-        setErrors(["Email is required"]);
-        setLoading(false);
-        return;
+        validationErrors.push("Email is required");
+      } else {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(formData.email)) {
+          validationErrors.push("Invalid email format");
+        }
       }
+
       if (!formData.password) {
-        setErrors(["Password is required"]);
+        validationErrors.push("Password is required");
+      } else if (formData.password.length < 6) {
+        validationErrors.push("Password must be at least 6 characters");
+      }
+
+      if (validationErrors.length > 0) {
+        setErrors(validationErrors);
         setLoading(false);
         return;
       }
@@ -57,13 +72,14 @@ export default function Login() {
       const res = await loginUser(formData);
 
       // Backend returns: { success, message, token, user: { userCode, role, email, name, organizationCode, organizationType, ... } }
-      if (res.data.success) {
-        const { token, user } = res.data;
+      if (res?.data?.success || res?.token || res?.success) {
+        const token = res?.data?.token || res?.token;
+        const user = res?.data?.user || res?.user;
 
         // ✅ SAVE AUTH DATA using AuthContext
-        login(user, token);
+        if (login) login(user, token);
 
-        toast.success("Login successful! Redirecting...");
+        toast.success("Login successful!");
 
         // 🔀 ORGANIZATION TYPE REDIRECT
         // Redirect based on organization type user belongs to
@@ -100,7 +116,8 @@ export default function Login() {
         ]);
       }
 
-      toast.error(err.response?.data?.message || "Login failed");
+      toast.error(err.response?.data?.message || err.message || "Login failed");
+    } finally {
       setLoading(false);
     }
   };
@@ -227,14 +244,15 @@ export default function Login() {
                 )}
 
                 {/* Form */}
-                <form onSubmit={handleSubmit} className="space-y-5">
+                <form onSubmit={handleSubmit} noValidate className="space-y-5">
                   {/* Organization Code */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                    <label htmlFor="organizationCode" className="block text-sm font-medium text-gray-300 mb-2">
                       Organization Code
                     </label>
 
                     <input
+                      id="organizationCode"
                       type="text"
                       name="organizationCode"
                       placeholder="e.g. HOSP-DEL-001"
@@ -251,11 +269,12 @@ export default function Login() {
 
                   {/* Email */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                    <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
                       Email Address
                     </label>
 
                     <input
+                      id="email"
                       type="email"
                       name="email"
                       placeholder="your.email@organization.com"
@@ -268,50 +287,53 @@ export default function Login() {
 
                   {/* Password */}
                   <div>
-                    <lable className="block text-sm font-medium text-gray-300 mb-2">
-                      <div className="relative">
-                        <input
-                          types={showPassword ? "text" : "password"}
-                          name="password"
-                          placeholder="Enter your password"
-                          value={formData.password}
-                          onChange={handleChange}
-                          disabled={loading}
-                          className="w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-5 pr-14 text-white placeholder:text-gray-500 outline-none transition-all duration-300 focus:border-red-500 focus:bg-white/10"
-                        />
+                    <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
+                      Password
+                    </label>
+                    <div className="relative">
+                      <input
+                        id="password"
+                        type={showPassword ? "text" : "password"}
+                        name="password"
+                        placeholder="Enter your password"
+                        value={formData.password}
+                        onChange={handleChange}
+                        disabled={loading}
+                        className="w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-5 pr-14 text-white placeholder:text-gray-500 outline-none transition-all duration-300 focus:border-red-500 focus:bg-white/10"
+                      />
 
-                        <button
-                          type="button"
-                          onClick={() => setShowPassword(!showPassword)}
-                          className="absolute inset-y-0 right-4 flex items-center text-gray-400 hover:text-white transition-colors"
-                        >
-                          {showPassword ? (
-                            <EyeOff className="h-5 w-5" />
-                          ) : (
-                            <Eye className="h-5 w-5" />
-                          )}
-                        </button>
-                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute inset-y-0 right-4 flex items-center text-gray-400 hover:text-white transition-colors"
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-5 w-5" />
+                        ) : (
+                          <Eye className="h-5 w-5" />
+                        )}
+                      </button>
+                    </div>
 
-                      <p className="mt-2 text-xs text-gray-500">
-                        Minimum 6 characters
-                      </p>
-                    </lable>
+                    <p className="mt-2 text-xs text-gray-500">
+                      Minimum 6 characters
+                    </p>
                   </div>
 
                   {/* Button */}
                   <button
                     type="submit"
                     disabled={loading}
+                    aria-label={loading ? "Signing in" : "Sign in"}
                     className="w-full rounded-2xl bg-gradient-to-r from-red-500 via-pink-500 to-rose-500 py-4 font-bold text-white transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-red-500/30 disabled:opacity-50"
                   >
                     {loading ? (
                       <div className="flex items-center justify-center gap-3">
                         <div className="h-5 w-5 rounded-full border-2 border-white border-t-transparent animate-spin"></div>
-                        Logging in...
+                        Signing in...
                       </div>
                     ) : (
-                      "Login"
+                      "Sign in"
                     )}
                   </button>
                 </form>
