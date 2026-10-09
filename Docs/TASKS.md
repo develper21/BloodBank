@@ -21,7 +21,7 @@ Set up the development environment, repository and core configuration.
 | 1.3 | Set up Git repository | High | ✅ Completed | GitHub remote configured |
 | 1.4 | Initialize Express server (Backend) | High | ✅ Completed | server.js + app.js entry points |
 | 1.5 | Connect MongoDB via config/db.js | High | ✅ Completed | Native driver, getDB() |
-| 1.6 | Docker + Nginx + Render config | Medium | ✅ Completed | Dockerfiles, render.yaml |
+| 1.6 | Render configuration | Medium | ✅ Completed | render.yaml |
 
 ## ✅ Phase 2: Authentication & Organization Onboarding
 
