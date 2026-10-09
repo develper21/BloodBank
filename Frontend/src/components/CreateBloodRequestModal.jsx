@@ -21,18 +21,12 @@ export default function CreateBloodRequestModal({ isOpen, onClose, onSuccess, ho
 
   const token = localStorage.getItem('token');
 
-  useEffect(() => {
-    if (isOpen) {
-      fetchBloodBanks();
-    }
-  }, [isOpen]);
-
   const fetchBloodBanks = async () => {
     try {
       setLoading(true);
       setError(null);
       const response = await getVerifiedBloodBanks();
-      setBloodBanks(response.data.data || []);
+      setBloodBanks(response?.data?.data || []);
       setLoading(false);
     } catch (err) {
       console.error('Error fetching blood banks:', err);
@@ -40,6 +34,12 @@ export default function CreateBloodRequestModal({ isOpen, onClose, onSuccess, ho
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchBloodBanks();
+    }
+  }, [isOpen]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -142,13 +142,14 @@ export default function CreateBloodRequestModal({ isOpen, onClose, onSuccess, ho
             </div>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} noValidate className="space-y-6">
             {/* Blood Bank Selection */}
             <div>
-              <label className="block text-sm font-semibold text-[#2f1012] mb-2">
+              <label htmlFor="bloodBankId" className="block text-sm font-semibold text-[#2f1012] mb-2">
                 Select Blood Bank *
               </label>
               <select
+                id="bloodBankId"
                 name="bloodBankId"
                 value={formData.bloodBankId}
                 onChange={handleChange}
@@ -171,10 +172,11 @@ export default function CreateBloodRequestModal({ isOpen, onClose, onSuccess, ho
 
             {/* Blood Group */}
             <div>
-              <label className="block text-sm font-semibold text-[#2f1012] mb-2">
+              <label htmlFor="bloodGroup" className="block text-sm font-semibold text-[#2f1012] mb-2">
                 Blood Group *
               </label>
               <select
+                id="bloodGroup"
                 name="bloodGroup"
                 value={formData.bloodGroup}
                 onChange={handleChange}
@@ -192,10 +194,11 @@ export default function CreateBloodRequestModal({ isOpen, onClose, onSuccess, ho
 
             {/* Units Required */}
             <div>
-              <label className="block text-sm font-semibold text-[#2f1012] mb-2">
+              <label htmlFor="unitsRequired" className="block text-sm font-semibold text-[#2f1012] mb-2">
                 Units Required *
               </label>
               <input
+                id="unitsRequired"
                 type="number"
                 name="unitsRequired"
                 value={formData.unitsRequired}
@@ -245,10 +248,11 @@ export default function CreateBloodRequestModal({ isOpen, onClose, onSuccess, ho
 
             {/* Notes */}
             <div>
-              <label className="block text-sm font-semibold text-[#2f1012] mb-2">
+              <label htmlFor="notes" className="block text-sm font-semibold text-[#2f1012] mb-2">
                 Additional Notes (Optional)
               </label>
               <textarea
+                id="notes"
                 name="notes"
                 value={formData.notes}
                 onChange={handleChange}
@@ -270,6 +274,7 @@ export default function CreateBloodRequestModal({ isOpen, onClose, onSuccess, ho
               <button
                 type="submit"
                 disabled={submitting}
+                aria-label={submitting ? "Submitting" : "Submit request"}
                 className="flex-1 rounded-full bg-gradient-to-r from-[#8f0f1a] to-[#c62832] px-6 py-3 font-semibold text-white shadow-[0_15px_35px_rgba(143,15,26,0.25)] transition hover:scale-105 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:scale-100"
               >
                 {submitting ? "Creating..." : "Create Request"}
