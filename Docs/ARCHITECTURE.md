@@ -40,7 +40,7 @@ Technologies used in the project and their purpose.
 | Monitoring | Sentry + custom performance monitor | Error tracking & health metrics |
 | Compliance | AES-256-GCM, DSAR, audit logger | GDPR / HIPAA utilities |
 | Testing | Jest + React Testing Library, Cypress | Unit & e2e testing |
-| DevOps | Docker, Nginx, Render, GitHub | Deployment & source control |
+| DevOps | Render, GitHub Actions | Deployment & source control |
 
 ## 3. Folder Structure
 
